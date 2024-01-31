@@ -1,0 +1,44 @@
+name: Build and Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        goos: [windows, darwin, linux]
+        goarch: [amd64, arm64]
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: 1.16
+    - name: Build
+      run: |
+        export GOOS=${{ matrix.goos }}
+        export GOARCH=${{ matrix.goarch }}
+        go build -v -o ${{ runner.temp }}/myapp-${{ matrix.goos }}-${{ matrix.goarch }} ./...
+    - uses: actions/upload-artifact@v2
+      with:
+        name: loadr-${{ matrix.goos }}-${{ matrix.goarch }}
+        path: ${{ runner.temp }}/myapp-${{ matrix.goos }}-${{ matrix.goarch }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        path: artifacts
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./artifacts/*
+        asset_name: loadr-${{ matrix.goos }}-${{ matrix.goarch }}
+        asset_content_type: application/octet-stream
