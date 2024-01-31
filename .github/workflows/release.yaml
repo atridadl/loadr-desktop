@@ -9,8 +9,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        goos: [windows, darwin, linux]
-        goarch: [amd64, arm64]
+        platform: [windows/amd64, windows/arm64, darwin/amd64, darwin/arm64, linux/amd64, linux/arm64]
     steps:
     - uses: actions/checkout@v2
     - uses: actions/setup-go@v2
@@ -18,13 +17,11 @@ jobs:
         go-version: 1.16
     - name: Build
       run: |
-        export GOOS=${{ matrix.goos }}
-        export GOARCH=${{ matrix.goarch }}
-        go build -v -o ${{ runner.temp }}/myapp-${{ matrix.goos }}-${{ matrix.goarch }} ./...
+        wails build -platform ${{ matrix.platform }} -o ${{ runner.temp }}/loadr-${{ matrix.platform }}
     - uses: actions/upload-artifact@v2
       with:
-        name: loadr-${{ matrix.goos }}-${{ matrix.goarch }}
-        path: ${{ runner.temp }}/myapp-${{ matrix.goos }}-${{ matrix.goarch }}
+        name: loadr-${{ matrix.platform }}
+        path: ${{ runner.temp }}/loadr-${{ matrix.platform }}
 
   release:
     needs: build
@@ -40,5 +37,5 @@ jobs:
       with:
         upload_url: ${{ github.event.release.upload_url }}
         asset_path: ./artifacts/*
-        asset_name: loadr-${{ matrix.goos }}-${{ matrix.goarch }}
+        asset_name: loadr-${{ matrix.platform }}
         asset_content_type: application/octet-stream
