@@ -1,0 +1,21 @@
+.load-test-form {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    gap: 10px;
+}
+
+.load-test-form input,
+.load-test-form select,
+.load-test-form button {
+    width: 300px;
+    padding: 10px;
+    margin-bottom: 10px;
+    font-size: 16px;
+}
+
+.load-test-form button {
+    cursor: pointer;
+}
