@@ -20,11 +20,11 @@ jobs:
         go install github.com/wailsapp/wails/v2/cmd/wails@latest
     - name: Build
       run: |
-        wails build -platform ${{ matrix.platform }} -o ${{ runner.temp }}/loadr-${{ matrix.platform }}
+        wails build -platform ${{ matrix.platform }}
     - uses: actions/upload-artifact@v2
       with:
         name: loadr-${{ matrix.platform }}
-        path: ${{ runner.temp }}/loadr-${{ matrix.platform }}
+        path: build/bin/*
 
   release:
     needs: build
@@ -39,6 +39,6 @@ jobs:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
         upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./artifacts/loadr-${{ matrix.platform }}
+        asset_path: ./artifacts/*
         asset_name: loadr-${{ matrix.platform }}
         asset_content_type: application/octet-stream
