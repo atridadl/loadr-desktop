@@ -1,11 +1,5 @@
-# README
-
-## About
-
-This is the official Wails React-TS template.
-
-You can configure the project by editing `wails.json`. More information about the project settings can be found
-here: https://wails.io/docs/reference/project-config
+# loadr desktop
+A desktop client with basic featres of loadr - a load testing CLI tool
 
 ## Live Development
 
