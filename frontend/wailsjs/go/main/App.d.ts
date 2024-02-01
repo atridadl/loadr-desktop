@@ -3,4 +3,6 @@
 import {main} from '../models';
 import {lib} from '../models';
 
+export function Cancel():Promise<void>;
+
 export function LoadTest(arg1:main.LoadTestConfig):Promise<lib.PerformanceMetrics>;

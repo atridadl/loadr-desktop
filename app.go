@@ -3,6 +3,7 @@ package main
 import (
 	"changeme/lib"
 	"context"
+	"sync"
 )
 
 // LoadTestConfig struct
@@ -16,7 +17,9 @@ type LoadTestConfig struct {
 
 // App struct
 type App struct {
-	ctx context.Context
+	ctx    context.Context
+	cancel context.CancelFunc
+	mux    sync.Mutex
 }
 
 // NewApp creates a new App application struct
@@ -32,7 +35,24 @@ func (a *App) startup(ctx context.Context) {
 
 // LoadTest performs a load test based on the given configuration
 func (a *App) LoadTest(config LoadTestConfig) (*lib.PerformanceMetrics, error) {
-	metrics := lib.SendRequests(config.URL, config.BearerToken, config.RequestType, config.MaxRequests, config.RequestsPerSec)
+	a.mux.Lock()
+	a.ctx, a.cancel = context.WithCancel(context.Background())
+	a.mux.Unlock()
+
+	// Reset the metrics at the start of each test
+	lib.ResetMetrics()
+
+	// Pass the context to the SendRequests function
+	metrics := lib.SendRequests(a.ctx, config.URL, "", config.RequestType, config.MaxRequests, config.RequestsPerSec)
 
 	return &metrics, nil
+}
+
+// Cancel cancels the ongoing load test
+func (a *App) Cancel() {
+	a.mux.Lock()
+	if a.cancel != nil {
+		a.cancel()
+	}
+	a.mux.Unlock()
 }

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import {LoadTest} from "../../wailsjs/go/main/App";
+import {Cancel, LoadTest} from "../../wailsjs/go/main/App";
 import './LoadTestComponent.css'; // Import the CSS file
 
 interface Metrics {
     MaxLatency: number;
     MinLatency: number;
-    TotalLatency: number;
+    AverageLatency: number;
     TotalRequests: number;
     TotalResponses: number;
 }
@@ -15,7 +15,7 @@ const LoadTestComponent: React.FC = () => {
         URL: '',
         RequestsPerSec: 0,
         MaxRequests: 0,
-        RequestType: '',
+        RequestType: 'GET',
         BearerToken: '',
     });
     const [loadTestStatus, setLoadTestStatus] = useState<'idle' | 'running' | 'done'>('idle');
@@ -24,7 +24,7 @@ const LoadTestComponent: React.FC = () => {
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         let value: string | number = event.target.value;
     
-        if (event.target.name === 'Url' && !value.startsWith('http://') && !value.startsWith('https://')) {
+        if (event.target.name === 'URL' && !value.startsWith('http://') && !value.startsWith('https://')) {
             value = 'https://' + value;
         }
     
@@ -54,6 +54,11 @@ const LoadTestComponent: React.FC = () => {
         }
     };
 
+    const handleCancel = async () => {
+        await Cancel();
+        setLoadTestStatus('idle');
+    };
+
     return (
         <div className="load-test-form">
             <input type="text" name="URL" placeholder="URL" onChange={handleInputChange} />
@@ -71,15 +76,17 @@ const LoadTestComponent: React.FC = () => {
             <button onClick={handleLoadTest} disabled={loadTestStatus === 'running'}>
                 {loadTestStatus === 'running' ? 'Running...' : 'Start Load Test'}
             </button>
+            <button onClick={handleCancel} disabled={loadTestStatus !== 'running'}>
+                Cancel Load Test
+            </button>
             {loadTestStatus === 'done' && metrics && (
                 <div className="metrics">
                     <h2>Metrics</h2>
                     <p>Max Latency: {metrics.MaxLatency}ms</p>
                     <p>Min Latency: {metrics.MinLatency}ms</p>
-                    <p>Total Latency: {metrics.TotalLatency}ms</p>
+                    <p>Average Latency: {metrics.AverageLatency}ms</p>
                     <p>Total Requests: {metrics.TotalRequests}</p>
-                    <p>Total Responses: {metrics.TotalResponses}</p>
-                </div>
+                    <p>Total Responses: {metrics.TotalResponses}</p></div>
             )}
         </div>
     );

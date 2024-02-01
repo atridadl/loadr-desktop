@@ -1,6 +1,7 @@
 package lib
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -50,8 +51,8 @@ func makeRequest(verb, url, token string, second int) error {
 	return nil
 }
 
-// sendRequests sends requests at the specified rate.
-func SendRequests(url, bearerToken, requestType string, maxRequests int, requestsPerSecond int) PerformanceMetrics {
+// SendRequests sends requests at the specified rate.
+func SendRequests(ctx context.Context, url, bearerToken, requestType string, maxRequests int, requestsPerSecond int) PerformanceMetrics {
 	// Calculate the rate limit based on the requests per second.
 	rateLimit := time.Second / time.Duration(requestsPerSecond)
 	ticker := time.NewTicker(rateLimit)
@@ -68,25 +69,28 @@ func SendRequests(url, bearerToken, requestType string, maxRequests int, request
 
 	// Start sending requests at the specified rate.
 	startTime := time.Now()
-	for range ticker.C {
-		second := int(time.Since(startTime).Seconds())
-		if int(requestCount) >= maxRequests {
-			break
-		}
-		wg.Add(1)
-		go func(u, t, verb string, sec int) {
-			defer wg.Done()
-			err := makeRequest(verb, u, t, sec)
-			if err != nil {
-				fmt.Println(err)
-				return
+	for {
+		select {
+		case <-ticker.C:
+			second := int(time.Since(startTime).Seconds())
+			if int(requestCount) >= maxRequests {
+				return *GetMetrics()
 			}
+			wg.Add(1)
+			go func(u, t, verb string, sec int) {
+				defer wg.Done()
+				err := makeRequest(verb, u, t, sec)
+				if err != nil {
+					fmt.Println(err)
+					return
+				}
 
-			atomic.AddInt32(&requestCount, 1)
-		}(url, bearerToken, strings.ToUpper(requestType), second)
+				atomic.AddInt32(&requestCount, 1)
+			}(url, bearerToken, strings.ToUpper(requestType), second)
+		case <-ctx.Done():
+			// The context has been cancelled, wait for all requests to finish and return the metrics collected so far
+			wg.Wait()
+			return *GetMetrics()
+		}
 	}
-
-	wg.Wait() // Wait for all requests to finish.
-
-	return *GetMetrics()
 }
